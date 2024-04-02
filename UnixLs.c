@@ -40,7 +40,7 @@ void parseStrings(int argv, char** argc) {
 }
 
 void LS_LI(DIR* dir) {
-    //TO DO:
+    //TO DO (do this last):
 }
 
 void LS_I(DIR* dir) {
@@ -52,7 +52,7 @@ void LS_L(DIR* dir) {
 }
 
 void LS_None(DIR* dir) {
-    //TO DO:
+    //TO DO (do this first):
 }
 
 //Calls Display_Info() on each dir in our list or dir names
@@ -108,5 +108,6 @@ int main(int argv, char** argc) {
     setOptions();
     LS_Function();
 
+    List_Free(dirList, NULL); //TO DO: write the free functions
     return 0;
 }
