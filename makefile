@@ -1,7 +1,7 @@
 all:build
 
 build:
-	gcc -o UnixLs UnixLs.c
+	gcc -o UnixLs UnixLs.c list.o
 
 run:
 	./UnixLs
