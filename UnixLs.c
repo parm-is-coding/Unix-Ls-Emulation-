@@ -5,7 +5,7 @@
 #include <sys/stat.h> //stat(), lstat()
 #include <dirent.h> //opendir(), readdir(), closedir()
 
-void (*Display_Info)(DIR*);
+void (*Display_Info)(struct dirent*);
 
 //our booleans for optinos
 int optionI = 0, optionL = 0;
@@ -42,19 +42,19 @@ void parseStrings(int argv, char** argc) {
     }
 }
 
-void LS_LI(DIR* dir) {
+void LS_LI(struct dirent* dir) {
     //TO DO (do this last):
 }
 
-void LS_I(DIR* dir) {
+void LS_I(struct dirent* dir) {
     //TO DO:
 }
 
-void LS_L(DIR* dir) {
+void LS_L(struct dirent* dir) {
     //TO DO:
 }
 
-void LS_None(DIR* dir) {
+void LS_None(struct dirent* dir) {
     //TO DO (do this first):
 }
 
@@ -66,7 +66,7 @@ void LS_Function() {
         //set up our directory pointer
 
         //this is basically a linked list, readdir gets the current and iterates the list
-        DIR* dir = opendir(List_current(dirList)); //WARNING: might need to check for null errors (asuming arguments are valid)
+        DIR* dir = opendir(List_curr(dirList)); //WARNING: might need to check for null errors (asuming arguments are valid)
         struct dirent *item; //prepend with struct because they haven't done a typedef in their header
 
         //iterate through each item
@@ -112,10 +112,10 @@ void setOptions() {
 int main(int argv, char** argc) {
     dirList = List_create(); //init list
 
-    parseString(argv, argc);
+    parseStrings(argv, argc);
     setOptions();
     LS_Function();
 
-    List_Free(dirList, NULL); //TO DO: write the free functions
+    List_free(dirList, NULL); //TO DO: write the free functions
     return 0;
 }
