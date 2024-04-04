@@ -1,6 +1,6 @@
 
 #include <stdio.h>
-#include <list.h>
+#include "list.h"
 
 #include <sys/stat.h> //stat(), lstat()
 #include <dirent.h> //opendir(), readdir(), closedir()
@@ -15,22 +15,25 @@ List* dirList;
 
 //adds all directory names we need to call ls on to our dirList
 void parseStrings(int argv, char** argc) {
-    for (int i = 0; i < argv; i++) {
+    //i = 0 is not neccessary -
+    for (int i = 1; i < argv; i++) {
         char* dirName = argc[i];
         //check if it is a option, we are currently not checking for invalid options
         if (dirName[0] == '-') {
             int j = 1; //need to check for compounded options too
             while (dirName[j] != '\0') {
-                if (dirName[1] == 'i') {
+                if (dirName[j] == 'i') {
                     optionI = 1;
                 }
 
-                if (dirName[1] == 'l') {
+                if (dirName[j] == 'l') {
                     optionL = 1;
                 }
+
+                j++;
             }
             
-            continue;
+            continue; //skips adding this to our directories
         }
 
         //else: it is a dir name, might need to check for case: not a dir
@@ -61,6 +64,8 @@ void LS_Function() {
     int n = List_count(dirList);
     for (int i = 0; i < n; i++) {
         //set up our directory pointer
+
+        //this is basically a linked list, readdir gets the current and iterates the list
         DIR* dir = opendir(List_current(dirList)); //WARNING: might need to check for null errors (asuming arguments are valid)
         struct dirent *item; //prepend with struct because they haven't done a typedef in their header
 
@@ -77,6 +82,9 @@ void LS_Function() {
         close: {
             closedir(dir);
         }
+
+        //update list
+        List_next(dirList);
     }
 }
 
