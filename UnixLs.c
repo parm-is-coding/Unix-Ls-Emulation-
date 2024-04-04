@@ -1,11 +1,16 @@
 
 #include <stdio.h>
 #include "list.h"
+#include <stdlib.h> //exit()
 
 #include <sys/stat.h> //stat(), lstat()
 #include <dirent.h> //opendir(), readdir(), closedir()
-
+#include <string.h> // strcpy()
+#define MAX_BUFFER 100
 void (*Display_Info)(struct dirent*);
+
+//Understand pathing in ls
+
 
 //our booleans for optinos
 int optionI = 0, optionL = 0;
@@ -13,34 +18,45 @@ int optionI = 0, optionL = 0;
 //a list of directories we need to call our LS function on
 List* dirList;
 
+//elements in argc can be directorynames, filenames, options, or invalid characters
+static void freefunc(void* pItem){
+    char* item = pItem;
+    free(item);
+}
 //adds all directory names we need to call ls on to our dirList
-void parseStrings(int argv, char** argc) {
+void parseStrings(int argv, char** argc,List* directoryPathList) {
     //i = 0 is not neccessary -
     for (int i = 1; i < argv; i++) {
-        char* dirName = argc[i];
+        char buffer[MAX_BUFFER];
+        strncpy(buffer,argc[i],MAX_BUFFER);
+        printf("%s\n",buffer);
         //check if it is a option, we are currently not checking for invalid options
-        if (dirName[0] == '-') {
+        if (buffer[0] == '-') {
             int j = 1; //need to check for compounded options too
-            while (dirName[j] != '\0') {
-                if (dirName[j] == 'i') {
+            while (buffer[j] != '\0') {
+                if (buffer[j] == 'i') {
                     optionI = 1;
                 }
 
-                if (dirName[j] == 'l') {
+                if (buffer[j] == 'l') {
                     optionL = 1;
                 }
-
+                if(buffer[j] != 'j' && buffer[j] != 'i'){
+                    printf("Error: invalid flag operations");
+                    List_free(directoryPathList,freefunc);
+                    exit(1);
+                }
                 j++;
             }
-            
-            continue; //skips adding this to our directories
         }
 
-        //else: it is a dir name, might need to check for case: not a dir
-        //TO DO (add to list of dir names):
-        List_append(dirList, dirName);
+            continue; //skips adding this to our directories
     }
 }
+        // //else: it is a dir name, might need to check for case: not a dir
+        // //TO DO (add to list of dir names):
+        // List_append(dirList, dirName);
+
 
 void LS_LI(struct dirent* dir) {
     //TO DO (do this last):
@@ -55,7 +71,7 @@ void LS_L(struct dirent* dir) {
 }
 
 void LS_None(struct dirent* dir) {
-    //TO DO (do this first):
+    printf("no arg case was run");
 }
 
 //Calls Display_Info() on each dir in our list or dir names
@@ -110,12 +126,11 @@ void setOptions() {
 
 //if (string)
 int main(int argv, char** argc) {
-    dirList = List_create(); //init list
-
-    parseStrings(argv, argc);
-    setOptions();
-    LS_Function();
-
-    List_free(dirList, NULL); //TO DO: write the free functions
+    List* directoryPathList = List_create(); //init list
+    parseStrings(argv, argc,directoryPathList);
+    //setOptions();
+    //LS_Function();
+    printf("FOOBAR\n");
+    List_free(directoryPathList, freefunc); 
     return 0;
 }

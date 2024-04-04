@@ -1,6 +1,5 @@
 
-  @file UnixLs.c
-  # Unix ls Emulation program
+# Unix ls Emulation program
   
   This program emulates the ls command in Unix. It supports the following options:
   1. -i: Display the inode number of each file.
