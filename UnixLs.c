@@ -10,7 +10,9 @@
 void (*Display_Info)(struct dirent*);
 
 //Understand pathing in ls
-
+    //a path can either start from / ~home or the current directory
+        // root and home directory paths require usernames however invalid paths will break opendir
+    //assume directery names given are from .
 
 //our booleans for optinos
 int optionI = 0, optionL = 0;
@@ -55,6 +57,7 @@ void parseStrings(int argv, char** argc,List* directoryPathList) {
 }
         // //else: it is a dir name, might need to check for case: not a dir
         // //TO DO (add to list of dir names):
+            //need to concatinate ./ 
         // List_append(dirList, dirName);
 
 
@@ -69,20 +72,26 @@ void LS_I(struct dirent* dir) {
 void LS_L(struct dirent* dir) {
     //TO DO:
 }
-
+//in this case the pathname is .
+// this happens when the directory structure isnt specified
 void LS_None(struct dirent* dir) {
     printf("no arg case was run");
 }
 
 //Calls Display_Info() on each dir in our list or dir names
-void LS_Function() {
+void LS_Function(List* dirList) {
     //iterate through each directory
     int n = List_count(dirList);
     for (int i = 0; i < n; i++) {
         //set up our directory pointer
 
         //this is basically a linked list, readdir gets the current and iterates the list
-        DIR* dir = opendir(List_curr(dirList)); //WARNING: might need to check for null errors (asuming arguments are valid)
+        DIR* dir = opendir(List_curr(dirList)); 
+        if(dir == NULL){
+            perror("opendir");
+            List_free(dirList,freefunc);
+            exit(1);
+        }
         struct dirent *item; //prepend with struct because they haven't done a typedef in their header
 
         //iterate through each item
