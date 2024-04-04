@@ -31,7 +31,6 @@ void parseStrings(int argv, char** argc,List* directoryPathList) {
     for (int i = 1; i < argv; i++) {
         char buffer[MAX_BUFFER];
         strncpy(buffer,argc[i],MAX_BUFFER);
-        printf("%s\n",buffer);
         //check if it is a option, we are currently not checking for invalid options
         if (buffer[0] == '-') {
             int j = 1; //need to check for compounded options too
@@ -43,16 +42,23 @@ void parseStrings(int argv, char** argc,List* directoryPathList) {
                 if (buffer[j] == 'l') {
                     optionL = 1;
                 }
-                if(buffer[j] != 'j' && buffer[j] != 'i'){
+                if(buffer[j] != 'l' && buffer[j] != 'i'){
                     printf("Error: invalid flag operations");
                     List_free(directoryPathList,freefunc);
                     exit(1);
                 }
                 j++;
             }
+        }else{
+            char* path = malloc(MAX_BUFFER);
+            strncpy(path,buffer,MAX_BUFFER);
+            List_append(directoryPathList,path);
         }
-
-            continue; //skips adding this to our directories
+    }
+    if(directoryPathList->count == 0){
+        char* path = malloc(MAX_BUFFER);
+        strncpy(path,".",MAX_BUFFER);
+        List_append(directoryPathList,path);
     }
 }
         // //else: it is a dir name, might need to check for case: not a dir
@@ -132,11 +138,21 @@ void setOptions() {
     //else:
     Display_Info = &LS_None;
 }
-
+void testOptions(List* dir){
+    printf("-i %d\n-l %d\n",optionI,optionL);
+    List_first(dir);
+    for(int i = 0; i < dir->count;i++){
+        char* curr = List_curr(dir);
+        List_next(dir);
+        printf("%s\n",curr);
+    }
+    
+}
 //if (string)
 int main(int argv, char** argc) {
     List* directoryPathList = List_create(); //init list
     parseStrings(argv, argc,directoryPathList);
+    testOptions(directoryPathList);
     //setOptions();
     //LS_Function();
     printf("FOOBAR\n");
