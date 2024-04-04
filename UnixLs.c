@@ -72,7 +72,16 @@ void LS_LI(DIR* dir) {
 }
 
 void LS_I(DIR* dir) {
-    //TO DO:
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if(entry->d_name[0] != '.'){
+            struct stat statbuf;
+            if (stat(entry->d_name, &statbuf) == 0) {
+                printf("%lu %s ", (unsigned long)statbuf.st_ino, entry->d_name);
+            }
+        }
+        
+    }
 }
 
 void LS_L(DIR* dir) {
@@ -83,9 +92,10 @@ void LS_L(DIR* dir) {
 void LS_None(DIR* dir) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
-        printf("%s ", entry->d_name);
+        if(entry->d_name[0] != '.'){
+            printf("%s ",entry->d_name);
+        }
     }
-
 }
 
 //Calls Display_Info() on each dir in our list or dir names
@@ -144,7 +154,7 @@ void testOptions(List* dir){
 int main(int argv, char** argc) {
     List* directoryPathList = List_create(); //init list
     parseStrings(argv, argc,directoryPathList);
-    testOptions(directoryPathList);
+    //testOptions(directoryPathList);
     setOptions();
     LS_Function(directoryPathList);
     List_free(directoryPathList, freefunc); 
