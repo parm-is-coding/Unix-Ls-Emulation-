@@ -7,7 +7,7 @@
 #include <dirent.h> //opendir(), readdir(), closedir()
 #include <string.h> // strcpy()
 #define MAX_BUFFER 100
-void (*Display_Info)(struct dirent*);
+void (*Display_Info)(DIR*);
 
 //Understand pathing in ls
     //a path can either start from / ~home or the current directory
@@ -67,53 +67,45 @@ void parseStrings(int argv, char** argc,List* directoryPathList) {
         // List_append(dirList, dirName);
 
 
-void LS_LI(struct dirent* dir) {
+void LS_LI(DIR* dir) {
     //TO DO (do this last):
 }
 
-void LS_I(struct dirent* dir) {
+void LS_I(DIR* dir) {
     //TO DO:
 }
 
-void LS_L(struct dirent* dir) {
+void LS_L(DIR* dir) {
     //TO DO:
 }
 //in this case the pathname is .
 // this happens when the directory structure isnt specified
-void LS_None(struct dirent* dir) {
-    printf("no arg case was run");
+void LS_None(DIR* dir) {
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        printf("%s ", entry->d_name);
+    }
+
 }
 
 //Calls Display_Info() on each dir in our list or dir names
 void LS_Function(List* dirList) {
     //iterate through each directory
-    int n = List_count(dirList);
+    int n = dirList->count;
+    List_first(dirList);
     for (int i = 0; i < n; i++) {
         //set up our directory pointer
 
         //this is basically a linked list, readdir gets the current and iterates the list
-        DIR* dir = opendir(List_curr(dirList)); 
+        DIR* dir = opendir((char*)List_curr(dirList)); 
         if(dir == NULL){
             perror("opendir");
             List_free(dirList,freefunc);
             exit(1);
         }
-        struct dirent *item; //prepend with struct because they haven't done a typedef in their header
-
-        //iterate through each item
-        while (true) {
-            item = readdir(dir); //gets next
-            if (item == NULL) {
-                goto close; //exits this while loop
-            }
-
-            Display_Info(item);
-        }
-
-        close: {
-            closedir(dir);
-        }
-
+        Display_Info(dir);
+        closedir(dir);
+        
         //update list
         List_next(dirList);
     }
@@ -153,9 +145,8 @@ int main(int argv, char** argc) {
     List* directoryPathList = List_create(); //init list
     parseStrings(argv, argc,directoryPathList);
     testOptions(directoryPathList);
-    //setOptions();
-    //LS_Function();
-    printf("FOOBAR\n");
+    setOptions();
+    LS_Function(directoryPathList);
     List_free(directoryPathList, freefunc); 
     return 0;
 }
