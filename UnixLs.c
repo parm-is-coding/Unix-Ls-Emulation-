@@ -29,12 +29,14 @@ static void freefunc(void* pItem){
 }
 //adds all directory names we need to call ls on to our dirList
 void parseStrings(int argv, char** argc,List* directoryPathList) {
+    int argMode = 1; //once we find a non arg, we are no longer taking args
     //i = 0 is not neccessary -
     for (int i = 1; i < argv; i++) {
         char buffer[MAX_BUFFER];
         strncpy(buffer,argc[i],MAX_BUFFER);
+
         //check if it is a option, we are currently not checking for invalid options
-        if (buffer[0] == '-') {
+        if (argMode == 1 && buffer[0] == '-') {
             int j = 1; //need to check for compounded options too
             while (buffer[j] != '\0') {
                 if (buffer[j] == 'i') {
@@ -44,30 +46,29 @@ void parseStrings(int argv, char** argc,List* directoryPathList) {
                 if (buffer[j] == 'l') {
                     optionL = 1;
                 }
+
                 if(buffer[j] != 'l' && buffer[j] != 'i'){
                     printf("Error: invalid flag operations");
-                    List_free(directoryPathList,freefunc);
+                    List_free(directoryPathList, freefunc);
                     exit(1);
                 }
+
                 j++;
             }
-        }else{
+        } else {
+            argMode = 0; //no longer argMode
             char* path = malloc(MAX_BUFFER);
-            strncpy(path,buffer,MAX_BUFFER);
-            List_append(directoryPathList,path);
+            strncpy(path, buffer, MAX_BUFFER);
+            List_append(directoryPathList, path);
         }
     }
-    if(directoryPathList->count == 0){
+
+    if (directoryPathList->count == 0) {
         char* path = malloc(MAX_BUFFER);
-        strncpy(path,".",MAX_BUFFER);
-        List_append(directoryPathList,path);
+        strncpy(path, ".", MAX_BUFFER);
+        List_append(directoryPathList, path);
     }
 }
-        // //else: it is a dir name, might need to check for case: not a dir
-        // //TO DO (add to list of dir names):
-            //need to concatinate ./ 
-        // List_append(dirList, dirName);
-
 
 void LS_LI(DIR* dir) {
     struct dirent *entry;
