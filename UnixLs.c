@@ -8,6 +8,9 @@
 #include <sys/stat.h> //stat(), lstat()
 #include <dirent.h> //opendir(), readdir(), closedir()
 #include <string.h> // strcpy()
+
+#include <unistd.h> //soft links
+
 #define MAX_BUFFER 100
 void (*Display_Info)(DIR*);
 
@@ -27,6 +30,7 @@ static void freefunc(void* pItem){
     char* item = pItem;
     free(item);
 }
+
 //adds all directory names we need to call ls on to our dirList
 void parseStrings(int argv, char** argc,List* directoryPathList) {
     int argMode = 1; //once we find a non arg, we are no longer taking args
@@ -74,12 +78,20 @@ void LS_LI(DIR* dir) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         if(entry->d_name[0] != '.'){
-            struct stat statbuf;
-            if (stat(entry->d_name, &statbuf) == 0) {
-                // Print InodeNumbers
-                printf("%lu ", (unsigned long)statbuf.st_ino);
-                // Print file type and permissions
-                printf((S_ISDIR(statbuf.st_mode)) ? "d" : "-");
+            struct stat statbuf; //lstat doesnt resolve symbolic links
+
+            if (lstat(entry->d_name, &statbuf) == 0) {
+                //inode
+                printf("%lu ", (unsigned long)statbuf.st_ino); 
+
+                //type
+                if (S_ISLNK(statbuf.st_mode)) {
+                    printf("l"); //Indicate it's a symlink
+                } else {
+                    printf((S_ISDIR(statbuf.st_mode)) ? "d" : "-");
+                }
+
+                //Print file type and permissions
                 printf((statbuf.st_mode & S_IRUSR) ? "r" : "-");
                 printf((statbuf.st_mode & S_IWUSR) ? "w" : "-");
                 printf((statbuf.st_mode & S_IXUSR) ? "x" : "-");
@@ -90,58 +102,79 @@ void LS_LI(DIR* dir) {
                 printf((statbuf.st_mode & S_IWOTH) ? "w" : "-");
                 printf((statbuf.st_mode & S_IXOTH) ? "x" : "-");
 
-                // Print number of hard links
-                printf(" %lu", (unsigned long)statbuf.st_nlink);
+                printf(" %lu", (unsigned long)statbuf.st_nlink); //still print # of hard links for symbolic
 
-                // Print owner name
+                //owner name
                 struct passwd *pw = getpwuid(statbuf.st_uid);
                 if (pw != NULL) {
                     printf(" %s", pw->pw_name);
                 }
 
-                // Print group name
+                //group name
                 struct group *gr = getgrgid(statbuf.st_gid);
                 if (gr != NULL) {
                     printf(" %s", gr->gr_name);
                 }
 
-                // Print file size
+                //file size
                 printf(" %lld", (long long)statbuf.st_size);
 
-                // Print last modification time
+                //last modification time
                 char timebuf[20];
                 struct tm *tm = localtime(&statbuf.st_mtime);
                 strftime(timebuf, sizeof(timebuf), "%b %d %H:%M", tm);
                 printf(" %s", timebuf);
 
-                // Print file name
-                printf(" %s\n", entry->d_name);
+                //file name
+                printf(" %s", entry->d_name);
+
+                if (S_ISLNK(statbuf.st_mode)) {
+                    //target of the symlink
+                    char target[256];
+                    ssize_t len = readlink(entry->d_name, target, sizeof(target) - 1);
+                    if (len != -1) {
+                        target[len] = '\0';
+                        printf("-> %s", target);
+                    } else {
+                        printf("ERROR: Couldn't read symlink target\n");
+                    }
+                }
+
+                printf("\n"); //formatting
             }
         }
     }
 }
 
+//good
 void LS_I(DIR* dir) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         if(entry->d_name[0] != '.'){
             struct stat statbuf;
-            if (stat(entry->d_name, &statbuf) == 0) {
-                printf("%lu %s ", (unsigned long)statbuf.st_ino, entry->d_name);
+            if (lstat(entry->d_name, &statbuf) == 0) {
+                printf("%lu %s\n", (unsigned long)statbuf.st_ino, entry->d_name);
             }
         }
         
     }
 }
 
+//good
 void LS_L(DIR* dir) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         if(entry->d_name[0] != '.'){
-            struct stat statbuf;
-            if (stat(entry->d_name, &statbuf) == 0) {
-                // Print file type and permissions
-                printf((S_ISDIR(statbuf.st_mode)) ? "d" : "-");
+            struct stat statbuf; //lstat doesnt resolve symbolic links
+
+            if (lstat(entry->d_name, &statbuf) == 0) {
+                if (S_ISLNK(statbuf.st_mode)) {
+                    printf("l"); //Indicate it's a symlink
+                } else {
+                    printf((S_ISDIR(statbuf.st_mode)) ? "d" : "-");
+                }
+
+                //Print file type and permissions
                 printf((statbuf.st_mode & S_IRUSR) ? "r" : "-");
                 printf((statbuf.st_mode & S_IWUSR) ? "w" : "-");
                 printf((statbuf.st_mode & S_IXUSR) ? "x" : "-");
@@ -152,38 +185,53 @@ void LS_L(DIR* dir) {
                 printf((statbuf.st_mode & S_IWOTH) ? "w" : "-");
                 printf((statbuf.st_mode & S_IXOTH) ? "x" : "-");
 
-                // Print number of hard links
-                printf(" %lu", (unsigned long)statbuf.st_nlink);
+                printf(" %lu", (unsigned long)statbuf.st_nlink); //still print # of hard links for symbolic
 
-                // Print owner name
+                //owner name
                 struct passwd *pw = getpwuid(statbuf.st_uid);
                 if (pw != NULL) {
                     printf(" %s", pw->pw_name);
                 }
 
-                // Print group name
+                //group name
                 struct group *gr = getgrgid(statbuf.st_gid);
                 if (gr != NULL) {
                     printf(" %s", gr->gr_name);
                 }
 
-                // Print file size
+                //file size
                 printf(" %lld", (long long)statbuf.st_size);
 
-                // Print last modification time
+                //last modification time
                 char timebuf[20];
                 struct tm *tm = localtime(&statbuf.st_mtime);
                 strftime(timebuf, sizeof(timebuf), "%b %d %H:%M", tm);
                 printf(" %s", timebuf);
 
-                // Print file name
-                printf(" %s\n", entry->d_name);
+                //file name
+                printf(" %s", entry->d_name);
+
+                if (S_ISLNK(statbuf.st_mode)) {
+                    //target of the symlink
+                    char target[256];
+                    ssize_t len = readlink(entry->d_name, target, sizeof(target) - 1);
+                    if (len != -1) {
+                        target[len] = '\0';
+                        printf("-> %s", target);
+                    } else {
+                        printf("ERROR: Couldn't read symlink target\n");
+                    }
+                }
+
+                printf("\n"); //formatting
             }
         }
     }
 }
+
+
 //in this case the pathname is .
-// this happens when the directory structure isnt specified
+//this happens when the directory structure isnt specified
 void LS_None(DIR* dir) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
