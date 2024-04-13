@@ -12,7 +12,7 @@
 #include <unistd.h> //soft links
 
 #define MAX_BUFFER 100
-void (*Display_Info)(DIR*);
+void (*Display_Info)(DIR*, char*);
 
 //Understand pathing in ls
     //a path can either start from / ~home or the current directory
@@ -74,13 +74,15 @@ void parseStrings(int argv, char** argc,List* directoryPathList) {
     }
 }
 
-void LS_LI(DIR* dir) {
+void LS_LI(DIR* dir, char* dirPath) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         if(entry->d_name[0] != '.'){
             struct stat statbuf; //lstat doesnt resolve symbolic links
 
-            if (lstat(entry->d_name, &statbuf) == 0) {
+            char fullPath[MAX_BUFFER * 3]; //cus adding 2 of em, made it x 3 cus of warnings
+            snprintf(fullPath, sizeof(fullPath), "%s/%s", dirPath, entry->d_name);
+            if (lstat(fullPath, &statbuf) == 0) {
                 //inode
                 printf("%lu ", (unsigned long)statbuf.st_ino); 
 
@@ -131,7 +133,7 @@ void LS_LI(DIR* dir) {
                 if (S_ISLNK(statbuf.st_mode)) {
                     //target of the symlink
                     char target[256];
-                    ssize_t len = readlink(entry->d_name, target, sizeof(target) - 1);
+                    ssize_t len = readlink(fullPath, target, sizeof(target) - 1);
                     if (len != -1) {
                         target[len] = '\0';
                         printf("-> %s", target);
@@ -147,27 +149,15 @@ void LS_LI(DIR* dir) {
 }
 
 //good
-void LS_I(DIR* dir) {
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL) {
-        if(entry->d_name[0] != '.'){
-            struct stat statbuf;
-            if (lstat(entry->d_name, &statbuf) == 0) {
-                printf("%lu %s\n", (unsigned long)statbuf.st_ino, entry->d_name);
-            }
-        }
-        
-    }
-}
-
-//good
-void LS_L(DIR* dir) {
+void LS_L(DIR* dir, char* dirPath) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         if(entry->d_name[0] != '.'){
             struct stat statbuf; //lstat doesnt resolve symbolic links
 
-            if (lstat(entry->d_name, &statbuf) == 0) {
+            char fullPath[MAX_BUFFER * 3]; //cus adding 2 of em, made it x 3 cus of warnings
+            snprintf(fullPath, sizeof(fullPath), "%s/%s", dirPath, entry->d_name);
+            if (lstat(fullPath, &statbuf) == 0) {
                 if (S_ISLNK(statbuf.st_mode)) {
                     printf("l"); //Indicate it's a symlink
                 } else {
@@ -214,7 +204,7 @@ void LS_L(DIR* dir) {
                 if (S_ISLNK(statbuf.st_mode)) {
                     //target of the symlink
                     char target[256];
-                    ssize_t len = readlink(entry->d_name, target, sizeof(target) - 1);
+                    ssize_t len = readlink(fullPath, target, sizeof(target) - 1);
                     if (len != -1) {
                         target[len] = '\0';
                         printf("-> %s", target);
@@ -229,10 +219,25 @@ void LS_L(DIR* dir) {
     }
 }
 
+//good
+void LS_I(DIR* dir, char* dirPath) {
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if(entry->d_name[0] != '.'){
+            struct stat statbuf;
+
+            char fullPath[MAX_BUFFER * 3]; //cus adding 2 of em, made it x 3 cus of warnings
+            snprintf(fullPath, sizeof(fullPath), "%s/%s", dirPath, entry->d_name);
+            if (lstat(fullPath, &statbuf) == 0) {
+                printf("%lu %s\n", (unsigned long)statbuf.st_ino, entry->d_name);
+            }
+        }
+    }
+}
 
 //in this case the pathname is .
 //this happens when the directory structure isnt specified
-void LS_None(DIR* dir) {
+void LS_None(DIR* dir, char* dirPath) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         if(entry->d_name[0] != '.'){
@@ -248,15 +253,15 @@ void LS_Function(List* dirList) {
     List_first(dirList);
     for (int i = 0; i < n; i++) {
         //set up our directory pointer
-
+        char* path = (char*)List_curr(dirList); //pointer to path name
         //this is basically a linked list, readdir gets the current and iterates the list
-        DIR* dir = opendir((char*)List_curr(dirList)); 
+        DIR* dir = opendir(path); 
         if(dir == NULL){
             perror("opendir");
             List_free(dirList,freefunc);
             exit(1);
         }
-        Display_Info(dir);
+        Display_Info(dir, path);
         closedir(dir);
         
         //update list
