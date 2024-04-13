@@ -9,3 +9,6 @@ git:
 	git add *
 	git commit
 	git push
+
+clean:
+	rm UnixLs
