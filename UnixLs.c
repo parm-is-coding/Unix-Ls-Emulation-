@@ -213,8 +213,9 @@ void LS_Function(List* dirList) {
         
         //update list
         List_next(dirList);
+
+        printf("\n\n"); //formatting
     }
-    printf("\n"); //formatting
 }
 
 void setOptions() {
